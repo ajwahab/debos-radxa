@@ -1,31 +1,75 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 CMD=`realpath $0`
 DOCKER_DIR=`dirname $CMD`
 TOP_DIR=$(realpath $DOCKER_DIR/..)
 
-cd $TOP_DIR
-CURDIR="$PWD"
+usage() {
+  cat << EOF
 
-case $(uname -s) in
-  Linux)
-    echo "Building Docker environment..."
-    docker build  -t debos-radxa:1 ./docker/
-    echo "Enter Docker container..."
-    exec docker run \
-      --rm \
-      --interactive --tty \
-      --tmpfs /dev/shm:rw,nosuid,nodev,exec,size=4g \
-      --security-opt label=disable \
-      --env HOME \
-      --privileged \
-      --hostname terra \
-      --volume "${CURDIR}:${CURDIR}" \
-      --workdir "${CURDIR}" \
-      debos-radxa:1 \
+Usage: $(basename "${BASH_SOURCE[0]}") [mode]
+
+Available modes:
+
+help | --help | -h    Display help and exit
+build | --build | -b  Build debos-radxa environment
+run | --run | -r      Run debos-radxa shell
+
+EOF
+  exit
+}
+
+build() {
+  echo "Building debos-radxa environment..."
+  docker build -t debos-radxa:1 $1
+}
+
+run() {
+    echo "Running debos-radxa shell..."
+    echo $1
+    docker run \
+           --rm \
+           --interactive --tty \
+           --tmpfs /dev/shm:rw,nosuid,nodev,exec,size=4g \
+           --hostname terra \
+           --volume "$1:/opt/debos-radxa:rw" \
+           --workdir "/opt/debos-radxa" \
+           debos-radxa:1
+           # --entrypoint "./build-os.sh -b radxa-zero -m ubuntu" \
+}
+
+host_platform=$(uname -s)
+case $host_platform in
+  Linux | Darwin)
+    pushd $TOP_DIR
+    while :; do
+      case "${1-}" in
+        help | --help | -h)
+          usage
+          break
+          ;;
+        build | --build | -b)
+          build "$TOP_DIR/docker/" "${2-}"
+          shift
+          break
+          ;;
+        run | --run | -r)
+          run $TOP_DIR "${2-}"
+          shift
+          break
+          ;;
+        *)
+          usage
+          break
+          ;;
+      esac
+      shift
+      popd
+    done
+    shift
     ;;
   *)
-    echo "Not supported: $(uname -s)"
-    exit 1
-  ;;
+    echo "Not supported: $host_platform"
+    ;;
 esac
+exit

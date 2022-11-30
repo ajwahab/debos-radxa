@@ -58,10 +58,10 @@ if [ ! $CPU ] && [ ! $BOARD ] && [ ! $MODEL ] && [ ! $DISTRO ] && [ ! $VARIANT ]
 fi
 
 build_board() {
-    echo "====Start to build $SUBBOARD board system image===="
+    echo "====Start to build $BOARD board system image===="
     $SCRIPTS_DIR/debos-target-board.sh -c $CPU -b $BOARD -m $MODEL -d $DISTRO -v $VARIANT -a $ARCH -f $FORMAT $DEBUG_SHELL
     $SCRIPTS_DIR/compress-system-image.sh -c $CPU -b $BOARD -m $MODEL -d $DISTRO -v $VARIANT -a $ARCH -f $FORMAT
-    echo "====Building $SUBBOARD board system image is done===="
+    echo "====Building $BOARD board system image is done===="
 }
 
 clean_system_images() {
